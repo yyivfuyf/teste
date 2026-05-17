@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>Dashboard - Psicólogo | SOS Emoções</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body { font-family: Arial, sans-serif; padding:1rem; max-width:1100px; margin:auto; background:#0f1621; color:#fff; }
+    .card { border:1px solid rgba(255,255,255,0.06); padding:1rem; border-radius:8px; margin-bottom:1rem; background:rgba(255,255,255,0.02); }
+    .alerts-list { list-style:none; padding:0; }
+    .alerts-list li { padding:0.5rem 0; border-bottom:1px solid rgba(255,255,255,0.03); }
+    pre { white-space:pre-wrap; word-break:break-word; font-size:13px; color:#ddd; }
+    .stat { display:inline-block; padding:12px 18px; background:#111827; border-radius:8px; margin-right:8px; }
+  </style>
+</head>
+<body>
+  <h1>Dashboard — Psicólogo</h1>
+  <p>Visão rápida dos alertas detectados localmente no dispositivo (salvos em localStorage).</p>
+
+  <div class="card">
+    <div id="stats">
+      <span class="stat" id="totalAlerts">Alertas: 0</span>
+      <span class="stat" id="criticos">Críticos: 0</span>
+      <span class="stat" id="perigosos">Perigosos: 0</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Alertas recentes</h2>
+    <ul class="alerts-list" id="alertsList"></ul>
+  </div>
+
+  <div class="card">
+    <h2>Padrões de isolamento (exemplo)</h2>
+    <div id="isolationList">Nenhum padrão detectado</div>
+  </div>
+
+  <script>
+    const STORAGE_KEY_ALERTS = 'sosEmocoes_alerts_v1';
+    const STORAGE_KEY_CHATS = 'sosEmocoes_chats_v4';
+    function carregarDashboard() {
+      const alerts = JSON.parse(localStorage.getItem(STORAGE_KEY_ALERTS) || '[]');
+      const chats = JSON.parse(localStorage.getItem(STORAGE_KEY_CHATS) || '[]');
+
+      document.getElementById('totalAlerts').textContent = 'Alertas: ' + alerts.length;
+      document.getElementById('criticos').textContent = 'Críticos: ' + alerts.filter(a => a.nivel === 'critico').length;
+      document.getElementById('perigosos').textContent = 'Perigosos: ' + alerts.filter(a => a.nivel === 'perigoso').length;
+
+      const list = document.getElementById('alertsList');
+      list.innerHTML = '';
+      alerts.slice().reverse().forEach(a => {
+        const li = document.createElement('li');
+        li.innerHTML = `<strong>${new Date(a.ts).toLocaleString()}</strong> — <em>${a.user||'anônimo'}</em> — <strong>${a.nivel}</strong><div style="margin-top:6px;"><pre>${a.texto}</pre></div>`;
+        list.appendChild(li);
+      });
+
+      // isolamento (simples)
+      const isolationCandidates = (chats || []).filter(m => {
+        const t = (m.texto||'').toLowerCase();
+        return t.includes('sozinho') || t.includes('isolado') || t.includes('ninguém') || t.includes('ninguém se importa');
+      });
+      document.getElementById('isolationList').textContent = isolationCandidates.length ? JSON.stringify(isolationCandidates.slice(-20), null, 2) : 'Nenhum padrão detectado';
+    }
+
+    document.addEventListener('DOMContentLoaded', carregarDashboard);
+  </script>
+</body>
+</html>
